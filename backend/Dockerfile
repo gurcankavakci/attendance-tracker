@@ -1,4 +1,5 @@
-FROM node:20-alpine
+# Build aşaması
+FROM node:20-alpine AS builder
 RUN apk add --no-cache openssl
 WORKDIR /app
 COPY package*.json ./
@@ -7,5 +8,15 @@ COPY prisma ./prisma
 RUN npx prisma generate
 COPY . .
 RUN npm run build
+
+# Runtime aşaması
+FROM node:20-alpine
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY prisma ./prisma
+RUN npx prisma generate
+COPY --from=builder /app/dist ./dist
 EXPOSE 3001
 CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]

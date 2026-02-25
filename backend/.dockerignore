@@ -2,4 +2,3 @@ node_modules
 dist
 .git
 *.bat
-package-lock.json
