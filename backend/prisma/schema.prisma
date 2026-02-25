@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Course {
+  id              Int                @id @default(autoincrement())
+  name            String
+  code            String             @default("")
+  requiredPercent Int
+  color           String
+  createdAt       DateTime           @default(now())
+  scheduleSlots   ScheduleSlot[]
+  attendanceRecords AttendanceRecord[]
+}
+
+model ScheduleSlot {
+  id                Int                @id @default(autoincrement())
+  courseId          Int
+  dayOfWeek         Int
+  startTime         String
+  endTime           String
+  location          String             @default("")
+  course            Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  attendanceRecords AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id             Int          @id @default(autoincrement())
+  scheduleSlotId Int
+  courseId       Int
+  date           String
+  status         String
+  week           Int
+  year           Int
+  scheduleSlot   ScheduleSlot @relation(fields: [scheduleSlotId], references: [id], onDelete: Cascade)
+  course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleSlotId, date])
+  @@index([week, year])
+}
+
+model SemesterSettings {
+  id         Int @id @default(1)
+  startWeek  Int
+  startYear  Int
+  endWeek    Int
+  endYear    Int
+}
