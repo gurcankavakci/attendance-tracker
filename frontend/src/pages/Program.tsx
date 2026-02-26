@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Plus, Trash2, Calendar, Clock, MapPin } from 'lucide-react'
+import { Plus, Trash2, Pencil, Calendar, Clock, MapPin } from 'lucide-react'
 import { useCourses } from '../hooks/useCourses'
-import { useScheduleSlots, addScheduleSlot, deleteScheduleSlot } from '../hooks/useSchedule'
+import { useScheduleSlots, addScheduleSlot, updateScheduleSlot, deleteScheduleSlot } from '../hooks/useSchedule'
 import Modal from '../components/ui/Modal'
 import { DAY_NAMES } from '../lib/dates'
-import type { Course } from '../db/db'
+import type { Course, ScheduleSlot } from '../db/db'
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
 
@@ -21,6 +21,7 @@ export default function Program() {
   const slots = useScheduleSlots()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ ...EMPTY_FORM })
+  const [editSlot, setEditSlot] = useState<ScheduleSlot | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const courseMap = new Map<number, Course>(courses.map(c => [c.id!, c]))
@@ -34,14 +35,36 @@ export default function Program() {
 
   function openAdd(day?: number) {
     setForm({ ...EMPTY_FORM, courseId: courses[0]?.id ?? 0, dayOfWeek: day ?? 1 })
+    setEditSlot(null)
     setShowModal(true)
+  }
+
+  function openEdit(slot: ScheduleSlot) {
+    setForm({
+      courseId: slot.courseId,
+      dayOfWeek: slot.dayOfWeek,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      location: slot.location,
+    })
+    setEditSlot(slot)
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditSlot(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.courseId) return
-    await addScheduleSlot(form)
-    setShowModal(false)
+    if (editSlot) {
+      await updateScheduleSlot(editSlot.id!, form)
+    } else {
+      await addScheduleSlot(form)
+    }
+    closeModal()
   }
 
   async function handleDelete(id: number) {
@@ -126,6 +149,12 @@ export default function Program() {
                         </div>
                       </div>
                       <button
+                        onClick={() => openEdit(slot)}
+                        className="btn-ghost p-2 text-blue-500 hover:bg-blue-50 flex-shrink-0"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
                         onClick={() => setDeleteId(slot.id!)}
                         className="btn-ghost p-2 text-red-500 hover:bg-red-50 flex-shrink-0"
                       >
@@ -140,9 +169,9 @@ export default function Program() {
         ))}
       </div>
 
-      {/* Add Modal */}
+      {/* Add / Edit Modal */}
       {showModal && (
-        <Modal title="Ders Saati Ekle" onClose={() => setShowModal(false)}>
+        <Modal title={editSlot ? 'Ders Saatini Düzenle' : 'Ders Saati Ekle'} onClose={closeModal}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label">Ders *</label>
@@ -199,8 +228,8 @@ export default function Program() {
               />
             </div>
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">İptal</button>
-              <button type="submit" className="btn-primary flex-1">Ekle</button>
+              <button type="button" onClick={closeModal} className="btn-secondary flex-1">İptal</button>
+              <button type="submit" className="btn-primary flex-1">{editSlot ? 'Güncelle' : 'Ekle'}</button>
             </div>
           </form>
         </Modal>

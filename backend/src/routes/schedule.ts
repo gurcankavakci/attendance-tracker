@@ -23,6 +23,22 @@ router.post('/', async (req, res) => {
   res.status(201).json(slot)
 })
 
+router.put('/:id', async (req, res) => {
+  const id = Number(req.params.id)
+  const { courseId, dayOfWeek, startTime, endTime, location } = req.body as {
+    courseId: number
+    dayOfWeek: number
+    startTime: string
+    endTime: string
+    location: string
+  }
+  const slot = await prisma.scheduleSlot.update({
+    where: { id },
+    data: { courseId, dayOfWeek, startTime, endTime, location: location ?? '' },
+  })
+  res.json(slot)
+})
+
 router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id)
   await prisma.scheduleSlot.delete({ where: { id } })

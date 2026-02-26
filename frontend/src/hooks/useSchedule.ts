@@ -16,6 +16,11 @@ export async function addScheduleSlot(data: Omit<ScheduleSlot, 'id'>) {
   await queryClient.invalidateQueries({ queryKey: ['schedule-slots'] })
 }
 
+export async function updateScheduleSlot(id: number, data: Omit<ScheduleSlot, 'id'>) {
+  await apiFetch(`/schedule-slots/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  await queryClient.invalidateQueries({ queryKey: ['schedule-slots'] })
+}
+
 export async function deleteScheduleSlot(id: number) {
   await apiFetch(`/schedule-slots/${id}`, { method: 'DELETE' })
   await queryClient.invalidateQueries({ queryKey: ['schedule-slots'] })

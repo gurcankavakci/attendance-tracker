@@ -5,7 +5,10 @@ import { useScheduleSlots } from '../hooks/useSchedule'
 import { useAttendanceForWeek, setAttendance } from '../hooks/useAttendance'
 import { getCurrentWeek, navigateWeek, formatWeekRange, getDateForDayOfWeek, DAY_NAMES, formatDate, isPastDate, isTodayDate } from '../lib/dates'
 import Badge from '../components/ui/Badge'
+import Modal from '../components/ui/Modal'
 import type { AttendanceStatus } from '../db/db'
+
+type PendingChange = { slotId: number; courseId: number; date: string; status: AttendanceStatus }
 
 interface StatusButtonProps {
   current: AttendanceStatus
@@ -36,6 +39,7 @@ function StatusButton({ current, value, label, icon, color, onClick }: StatusBut
 
 export default function Yoklama() {
   const [{ week, year }, setWeek] = useState(getCurrentWeek())
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(null)
   const courses = useCourses()
   const slots = useScheduleSlots()
   const records = useAttendanceForWeek(week, year)
@@ -53,7 +57,11 @@ export default function Yoklama() {
   })
 
   async function handleStatus(slotId: number, courseId: number, date: string, status: AttendanceStatus) {
-    await setAttendance(slotId, courseId, date, week, year, status)
+    if (isPastDate(date)) {
+      setPendingChange({ slotId, courseId, date, status })
+    } else {
+      await setAttendance(slotId, courseId, date, week, year, status)
+    }
   }
 
   function getStatus(slotId: number, date: string): AttendanceStatus {
@@ -105,6 +113,29 @@ export default function Yoklama() {
           <ChevronRight size={18} />
         </button>
       </div>
+
+      {/* Past attendance confirm modal */}
+      {pendingChange && (
+        <Modal title="Geçmiş Yoklamayı Değiştir" onClose={() => setPendingChange(null)} size="sm">
+          <p className="text-gray-600 mb-1">
+            <span className="font-medium">{formatDate(pendingChange.date)}</span> tarihli yoklamayı değiştirmek üzeresiniz.
+          </p>
+          <p className="text-sm text-gray-400 mb-4">Geçmiş bir tarihe ait kayıt güncelleniyor. Devam etmek istiyor musunuz?</p>
+          <div className="flex gap-3">
+            <button onClick={() => setPendingChange(null)} className="btn-secondary flex-1">İptal</button>
+            <button
+              onClick={async () => {
+                const { slotId, courseId, date, status } = pendingChange
+                setPendingChange(null)
+                await setAttendance(slotId, courseId, date, week, year, status)
+              }}
+              className="btn-primary flex-1"
+            >
+              Güncelle
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {/* Slots by day */}
       <div className="space-y-4">
