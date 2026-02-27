@@ -17,6 +17,7 @@ services:
 
   backend:
     build: ./backend
+    image: gurcankavakci/attendance-tracker-backend:1.0.0
     container_name: devam-takip-api
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -30,6 +31,7 @@ services:
 
   frontend:
     build: ./frontend
+    image: gurcankavakci/attendance-tracker-frontend:1.0.0
     container_name: devam-takip-web
     ports:
       - "3456:80"
