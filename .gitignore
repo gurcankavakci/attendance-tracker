@@ -9,6 +9,9 @@ frontend/dist/
 backend/node_modules/
 backend/dist/
 
+# Claude Code local settings
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
